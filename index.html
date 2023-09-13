@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <template class="timer-template">
+      <div class="timer">
+        <slot name="time">00:00</slot>
+        <slot name="play">play</slot>
+        <slot name="reset">reset</slot>
+        <slot name="stop">stop</slot>
+      </div>
+    </template>
+    <timer-component time="3">
+      <p slot="time" class="time">00: 00</p>
+      <button slot="play" class="play">play</button>
+      <button slot="reset" class="reset">reset</button>
+      <button slot="stop" class="stop">stop</button>
+    </timer-component>
+    <timer-component time="5">
+      <p slot="time" class="time">00: 00</p>
+      <button slot="play" class="play">play</button>
+      <button slot="reset" class="reset">reset</button>
+      <button slot="stop" class="stop">stop</button>
+    </timer-component>
+    <timer-component time="9">
+      <p slot="time" class="time">00: 00</p>
+      <button slot="play" class="play">play</button>
+      <button slot="reset" class="reset">reset</button>
+      <button slot="stop" class="stop">stop</button>
+    </timer-component>
+  </body>
+  <script>
+    class customEl extends HTMLElement {
+      constructor() {
+        super();
+        this.timerTemplate = document.querySelector(".timer-template");
+        this.initTime = this.getAttribute("time");
+        this.time = this.initTime * 1000;
+        this.target = Date.now() + this.time;
+        this.remain = 0;
+        this.interval = 0;
+        this.sec = String(Math.floor(this.time / 1000)).padStart(2, "0");
+        this.mil = String(Math.floor((this.time % 1000) / 10)).padStart(2, "0");
+        this.setTime(this.time);
+
+        this.event();
+      }
+
+      connectedCallback() {
+        this.render();
+      }
+
+      disconnectedCallback() {
+        cancelAnimationFrame(this.interval);
+      }
+
+      event() {
+        this.querySelector(".play").addEventListener("click", () => {
+          this.onPlayClickHandle();
+        });
+        this.querySelector(".reset").addEventListener("click", () => {
+          this.onResetClickHandle();
+        });
+        this.querySelector(".stop").addEventListener("click", () => {
+          this.onStopClickHandle();
+        });
+      }
+
+      onResetClickHandle() {
+        this.time = this.initTime * 1000;
+        this.target = Date.now() + this.time;
+        this.setTime(this.time);
+        this.renderTime();
+      }
+
+      onStopClickHandle() {
+        cancelAnimationFrame(this.interval);
+        this.target = Date.now() + this.time;
+      }
+
+      onPlayClickHandle() {
+        this.target = Date.now() + this.time;
+        this.start();
+      }
+
+      setTime(time) {
+        this.sec = String(Math.floor(time / 1000)).padStart(2, "0");
+        this.mil = String(Math.floor((time % 1000) / 10)).padStart(2, "0");
+      }
+
+      renderTime() {
+        this.querySelector(".time").innerText = `${this.sec} : ${this.mil}`;
+      }
+
+      start() {
+        this.time = Math.max(0, this.target - Date.now());
+
+        this.setTime(this.time);
+        this.interval = requestAnimationFrame(() => this.start());
+        if (this.time >= 0) {
+          this.renderTime();
+        }
+        if (this.time === 0) {
+          cancelAnimationFrame(this.interval);
+          return;
+        }
+      }
+
+      render() {
+        let clone = this.timerTemplate.content.cloneNode(true);
+        this.attachShadow({ mode: "open" }).appendChild(clone);
+        this.renderTime();
+      }
+    }
+    customElements.define("timer-component", customEl);
+  </script>
+</html>
